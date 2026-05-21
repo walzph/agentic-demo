@@ -5,6 +5,7 @@ INTERNAL_DIR="/home/user/app/.codesphere-internal"
 HOST_KEY="$INTERNAL_DIR/ws_host_key"
 AUTH_KEYS="$INTERNAL_DIR/authorized_keys"
 PID_FILE="$INTERNAL_DIR/sshd.pid"
+LOG_FILE="$INTERNAL_DIR/sshd.log"
 
 # 1. Install openssh if missing
 which sshd > /dev/null || nix-env -iA nixpkgs.openssh
@@ -18,7 +19,6 @@ if [ ! -f "$HOST_KEY" ]; then
 fi
 
 # 4. Write authorized_keys idempotently
-# Using '>' overwrites the file so keys don't duplicate on restart
 cat <<EOF > "$AUTH_KEYS"
 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIFrhskYFlptRJvVK2i7mYYIDPtKVltrUrvr6KjAOUKe philipp.walz@codesphere.com
 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDaJDZ+gO1Zb8BXdyw+TIBq8cguTkLN3oycbaUvFY3dW7JahmV5E5IPSZCWY9s7jB9R0KW/RZIFRhAk1r+L9eXnbtasqdF6kOF+ozqz4JVteLTfnvsKzYxntTZumr/IpdKxVjfQ4pnDdqblb8DvzStVCVBRWKulartmiCWRNPZcNPhjBGVD6sts+kY2lZn52wO9RAoU9Yb4o3OLqqXRlbqwAYPAS/J94tAZRIdEnIBLYF/mAPuIghR6sTDauibHrsM8CVMXmvoLf4YQLN8pFdG7X8d9gGBRSqAmQuGXqImTgzCdIjsHZLmS0clXqUjjXw8/ecYGf702Ooe32T40FYvUWCmCw88dHF9//IU7FTdDb6SRaXs+xX75YJ9BWLs2+rNLMnQAq+58/Ycx7Q5VGIog6+czurTktt8IKp377xqkDlGBulVsLb7qKlLJEXJhjhjQHax5tVYwSt36SRIux3IeGZoGshYl19JXRm/nzNyecgPO8zfiBosodEtJPA1DybufnaQjn7YS9f9zePgWHZfub3UPyomT4rMElnQk31PvIIm1iDDrhsGpoR5dbkA4EmIfRbqPrn22n24sUntwJxgF2HIP0lAgMkadsqmyAULcl3PBcP7ysN8sm1qCGOQrNXvMOCEdSdE6p4uEJVRRemorps4bjDhrZOV8PUmArfOo5Q== simonh@codesphere.com
@@ -39,12 +39,13 @@ if [ -f "$PID_FILE" ]; then
   rm -f "$PID_FILE"
 fi
 
-# 6. Start sshd in the background
-# Removed '-D' so the process detaches and runs as a background daemon
-$(which sshd) -p 2222 -h "$HOST_KEY" -e \
+# 6. Start sshd in the background with custom logging
+# Replaced '-e' (log to stderr) with '-E "$LOG_FILE"' (append logs to file)
+$(which sshd) -p 2222 -h "$HOST_KEY" -E "$LOG_FILE" \
   -f /dev/null \
   -o "AuthorizedKeysFile=$AUTH_KEYS" \
   -o "PasswordAuthentication=no" \
   -o "StrictModes=no" \
   -o "UsePAM=no" \
-  -o "PidFile=$PID_FILE"
+  -o "PidFile=$PID_FILE" \
+  -o "LogLevel=DEBUG3"
