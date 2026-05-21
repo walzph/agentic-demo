@@ -1,0 +1,49 @@
+schemaVersion: v0.2
+
+prepare:
+  steps:
+    - name: Install frontend dependencies
+      command: cd frontend && npm install && npm install serve
+    - name: Build frontend
+      command: cd frontend && npm run build
+    - name: Install backend dependencies
+      command: cd backend && npm install
+
+test:
+  steps: []
+
+run:
+  frontend:
+    plan: 201
+    network:
+      ports:
+        - port: 3000
+          isPublic: false
+      paths:
+        - port: 3000
+          path: /
+    volumes:
+      - name: _workspace
+        mountPath: /home/user/app
+    steps:
+      - name: Serve frontend
+        command: cd frontend && npx serve -s dist -l 3000
+
+  backend:
+    plan: 201
+    env:
+      PORT: "3001"
+    healthEndpoint: http://localhost:3001/api/health
+    network:
+      ports:
+        - port: 3001
+          isPublic: false
+      paths:
+        - port: 3001
+          path: /api
+    volumes:
+      - name: _workspace
+        mountPath: /home/user/app
+    steps:
+      - name: Start backend
+        command: cd backend && npm start
