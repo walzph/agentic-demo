@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minigame Portal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-y: auto;
+            position: relative;
+            padding: 20px;
+        }
+
+        /* Animated background particles */
+        .particle {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: float 6s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) translateX(0px);
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: slideIn 0.8s ease-out;
+            z-index: 10;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: white;
+            font-size: 3rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            margin-bottom: 15px;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% {
+                text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            }
+            50% {
+                text-shadow: 0 4px 30px rgba(240, 147, 251, 0.6);
+            }
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .game-card {
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 30px 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .game-card:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: white;
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .game-card h2 {
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .game-card p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+
+        /* Tic-Tac-Toe Styles */
+        #tictactoe-container {
+            display: none;
+        }
+
+        #tictactoe-container.show {
+            display: block;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .back-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: white;
+        }
+
+        .game-title {
+            color: white;
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            gap: 10px;
+            margin: 30px auto;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 10px;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cell:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: white;
+        }
+
+        .cell:disabled {
+            cursor: not-allowed;
+        }
+
+        .cell.x {
+            color: #4fa3ff;
+        }
+
+        .cell.o {
+            color: #ff6b6b;
+        }
+
+        .game-status {
+            color: white;
+            font-size: 1.2rem;
+            margin: 20px 0;
+            font-weight: 600;
+            min-height: 30px;
+        }
+
+        .reset-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            padding: 12px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .reset-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: white;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .board {
+                grid-template-columns: repeat(3, 80px);
+            }
+
+            .cell {
+                width: 80px;
+                height: 80px;
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Portal View -->
+        <div id="portal-view">
+            <h1>🎮 Minigame Portal</h1>
+            <p class="subtitle">Choose a game to play</p>
+            <div class="games-grid">
+                <div class="game-card" onclick="startGame('tictactoe')">
+                    <h2>⭕ Tic-Tac-Toe</h2>
+                    <p>Play against an AI opponent. Can you win?</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tic-Tac-Toe Game View -->
+        <div id="tictactoe-container">
+            <button class="back-button" onclick="backToPortal()">← Back</button>
+            <h2 class="game-title">Tic-Tac-Toe vs AI</h2>
+            <p style="color: rgba(255, 255, 255, 0.8);">You are X, AI is O</p>
+            <div class="game-status" id="game-status">Your turn!</div>
+            <div class="board" id="board">
+                <button class="cell" data-index="0"></button>
+                <button class="cell" data-index="1"></button>
+                <button class="cell" data-index="2"></button>
+                <button class="cell" data-index="3"></button>
+                <button class="cell" data-index="4"></button>
+                <button class="cell" data-index="5"></button>
+                <button class="cell" data-index="6"></button>
+                <button class="cell" data-index="7"></button>
+                <button class="cell" data-index="8"></button>
+            </div>
+            <button class="reset-button" onclick="resetGame()">New Game</button>
+        </div>
+    </div>
+
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const body = document.body;
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 2 + 's';
+                particle.style.animationDuration = (Math.random() * 4 + 4) + 's';
+                body.appendChild(particle);
+            }
+        }
+        createParticles();
+
+        const API_URL = window.location.protocol + '//' + window.location.hostname + ':3001';
+        let gameState = null;
+        let gameActive = true;
+
+        function startGame(game) {
+            if (game === 'tictactoe') {
+                document.getElementById('portal-view').style.display = 'none';
+                document.getElementById('tictactoe-container').classList.add('show');
+                resetGame();
+            }
+        }
+
+        function backToPortal() {
+            document.getElementById('tictactoe-container').classList.remove('show');
+            document.getElementById('portal-view').style.display = 'block';
+            gameActive = false;
+        }
+
+        async function resetGame() {
+            try {
+                const response = await fetch(`${API_URL}/api/game/reset`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                gameState = await response.json();
+                gameActive = true;
+                updateBoard();
+            } catch (error) {
+                console.error('Error resetting game:', error);
+                document.getElementById('game-status').textContent = 'Connection error! Check if backend is running.';
+            }
+        }
+
+        async function playerMove(index) {
+            if (!gameActive || gameState.gameOver || gameState.board[index] !== null) return;
+
+            try {
+                const response = await fetch(`${API_URL}/api/game/move`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ index: index })
+                });
+                gameState = await response.json();
+                updateBoard();
+            } catch (error) {
+                console.error('Error making move:', error);
+                document.getElementById('game-status').textContent = 'Connection error!';
+            }
+        }
+
+        function updateBoard() {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach((cell, index) => {
+                const value = gameState.board[index];
+                cell.textContent = value || '';
+                cell.className = 'cell';
+                if (value === 'X') {
+                    cell.classList.add('x');
+                    cell.disabled = true;
+                } else if (value === 'O') {
+                    cell.classList.add('o');
+                    cell.disabled = true;
+                } else {
+                    cell.disabled = false;
+                }
+            });
+
+            if (gameState.gameOver) {
+                gameActive = false;
+                if (gameState.winner === 'X') {
+                    document.getElementById('game-status').textContent = '🎉 You won!';
+                } else if (gameState.winner === 'O') {
+                    document.getElementById('game-status').textContent = '🤖 AI won!';
+                } else {
+                    document.getElementById('game-status').textContent = "🤝 It's a draw!";
+                }
+            } else {
+                document.getElementById('game-status').textContent = 'Your turn!';
+            }
+        }
+
+        // Set up event listeners for cells
+        document.querySelectorAll('.cell').forEach(cell => {
+            cell.addEventListener('click', () => {
+                const index = parseInt(cell.dataset.index);
+                playerMove(index);
+            });
+        });
+    </script>
+</body>
+</html>
