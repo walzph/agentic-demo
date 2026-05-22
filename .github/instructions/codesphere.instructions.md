@@ -255,8 +255,8 @@ run:
 ## Landscape Lifecycle
 
 1. **Define**: Write or edit `ci.yml` in the repo.
-2. **Sync**: In the Execution Manager, click Sync to provision all resources. The landscape does NOT auto-sync on git pull.
-3. **Start/Stop**: Manage service execution via the Execution Manager.
+2. **Sync**: In the Execution Manager, click Sync to provision all resources. The landscape does NOT auto-sync on git pull. This relates to the MCP task `deploy_landscape`.
+3. **Start/Stop**: Manage service execution via the Execution Manager. This relates to the MCP task `start_pipeline_stage` with stages `prepare` and `run`.
 4. **Off-When-Unused**: Services auto-shut down when idle and wake on incoming requests (ideal for dev/staging).
 5. **Teardown**: Deprovisions resources but preserves persistent volumes. Re-sync anytime.
 6. **Deletion**: Permanent removal of all resources and data.
@@ -281,7 +281,7 @@ A common setup is connecting to a Codesphere workspace from a local IDE (e.g., V
   - **Use the MCP server**: Call `list_teams`, then `list_workspaces` to find the workspace matching the current context.
   - **Ask the user**: If you need the workspace ID, ask the user once and reuse it for the rest of the session.
 - **No git pull before deploying.** Since file edits are already on the workspace filesystem, the deploy flow is: edit code -> (optionally run prepare if deps changed) -> deploy landscape / restart services. Do not suggest `git pull` when the user is editing files directly via Remote SSH.
-- **The user expects a tight edit-deploy loop.** When the user says "deploy", "sync", or "restart", they mean the current workspace they are connected to. Act on it directly.
+- **The user expects a tight edit-deploy loop.** When the user says "deploy", "sync", or "restart", they mean the current workspace they are connected to. Act on it directly. Always ensure you the MCP task `deploy_landscape` and `start_pipeline_stage` are executed in order and target the correct workspace ID.
 
 ### Available MCP Tools
 
@@ -296,9 +296,9 @@ A common setup is connecting to a Codesphere workspace from a local IDE (e.g., V
 - `exec_command` - Execute a command inside a workspace
 
 **CI/CD Pipeline:**
+- `deploy_landscape` - Deploy a workspace landscape, always run this before starting the pipeline stage `run`. This is the critical step that syncs the `ci.yml` and provisions services. Do NOT skip this step when deploying changes to the landscape.
 - `start_pipeline_stage` - Start a CI pipeline stage (prepare, run, etc.)
 - `get_pipeline_state` - Get the status of a pipeline stage
-- `deploy_landscape` - Deploy a workspace landscape
 
 **Landscape & Services:**
 - `scale_landscape_services` - Scale specific services in a landscape
@@ -367,7 +367,7 @@ When deploying a landscape in SSH Remote Development, follow this exact sequence
 
 **Why the order matters:**
 - **Must sync landscape BEFORE running stages.** The `run` stage cannot start until the landscape definition is synced. Attempting to run stages before sync will fail with 500 errors or "not running" errors.
-- **Profile names are critical.** A file named `ci.yml` maps to profile `__cs_default__`. A file named `ci.dev.yml` maps to profile `__cs_dev__`, etc. Using the wrong profile name will cause the sync to fail.
+- **Profile names are critical.** A file named `ci.dev.yml` maps to profile `dev`, etc. A file only named `ci.yml` maps to the special profile `__cs_default__`.  Using the wrong profile name will cause the sync to fail.
 - **The test section is required.** Even if empty, include `test:\n  steps: []` at the top level of every ci.yml. Missing this causes schema validation errors.
 - **Plan IDs must be valid.** Only use real plan IDs like 101, 201, 301, 401. Invalid IDs cause schema validation errors.
 
